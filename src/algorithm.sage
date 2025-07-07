@@ -1,0 +1,162 @@
+load("src/ideals.sage")
+load("src/rankcheck.sage")
+from math import sqrt  
+import itertools  
+import numpy
+from tqdm.auto import tqdm
+
+def p_rank_allsteps(  
+    p, lambda_pairs, lower_m1, upper_m1,
+    output_file=None, 
+    explicit_testing_3=False, verbose=True  
+):  
+    """
+
+    Algorithm 3.2 - "Improved Alg"
+
+    This runs Algorithm 3.2. The best way to understand this is to read this algorithm in the paper. Note that this function runs the algorithm in full, on one node in one computation. Thus, it is suitable for smaller computations to generate discriminants with non-trivial p-rank. 
+
+    Algorithm 3.2 uses two slightly different ideas, depending on whether p=3 or p > 3. By default, this function runs the optimal algorithm for a given value of p, but there is a flag provided to allow p=3 to run the other branch (perform explicit ideal independence testing). This will produce more discriminants for a given input, but is not worth the increase in run-time. 
+    
+    Note that memory will quickly become an issue if this code is run verbatim for a large computation, since a lot of data is being stored in dictionaries. In a large computation, this data should be stored outside of memory. 
+  
+    Input
+        p: an odd prime number (int)
+        lambda: a list of integer pairs [(lambda_i1, lambda_i2)]
+        lower_m1: lower bound on m_1
+        upper_m1: upper bound on m_1 
+        output_file: Optional path to a file to save the discriminants (string)
+        explicit_testing_3: either True or False, which can force p=3 to perform explicit ideal independence testing
+        verbose: either True or False, whether or not to print the progress of the computation to the console
+
+    Output
+        D: a list consisting of discriminants, each corresponding to a non-empty set of triples {(m_i, y_i, (lambda_ij)*z_i)} satisfying Proposition (2.3) (a) for n=p with lower_m1 <= m_1 <= upper_m1 and 2 <= m_2 < m_1, such that the ideal classes corresponding to the triples {(m_i, y_i, (lambda_ij)z_i)} generate a subgroup of the ideal class group of Q(sqrt{delta}) isomorphic to (Z/pZ)^k for some k > 1. 
+    """
+
+    show_progress = print if verbose else lambda *args, **kwargs: None
+
+    show_progress("\n==============================================")
+    show_progress(f"🚀 Starting Algorithm 3.2 🚀")
+    show_progress("==============================================")
+    show_progress(f"    Prime (p): {p}")
+    show_progress(f"    Lambda Pairs: {lambda_pairs}")
+    show_progress(f"    m1 Range: [{lower_m1}, {upper_m1}]")
+    show_progress("----------------------------------------------\n")
+
+    # ----------------- Determine which method to use for p=3
+    use_p3_optimization = (p == 3 and not explicit_testing_3)
+
+    show_progress("🔍 Step 1: Searching for solutions & generating ideals...")
+    ideals = {}  
+    
+    # ------------------ Main loops
+    for (lambda1, lambda2) in lambda_pairs:
+        show_progress(f"Processing lambda pair: ({lambda1}, {lambda2})")
+        
+        m1_range = range(lower_m1, upper_m1 + 1)
+        for m1 in tqdm(
+                        m1_range,
+                        desc="m1",
+                        unit="m1",
+                        disable=not verbose,
+                        ascii=" █",
+                        bar_format="{desc}: |{bar}| {n}/{total} [{elapsed}s]"
+                    ):
+            N1 = 4 * lambda2**2 * m1**p  
+            
+            m2_range = range(2, m1)
+            for m2 in tqdm(
+                            m2_range,
+                            desc=f"m2 for m1={m1}",
+                            unit="m2",
+                            disable=not verbose,
+                            leave=False,
+                            ascii=" █",
+                            bar_format="{desc}: |{bar}| {n}/{total} [{elapsed}s]"
+                        ):
+                N = N1 - 4 * lambda1**2 * m2**p  
+                
+                if (use_p3_optimization and N <= 0) or (not use_p3_optimization and N == 0):  
+                    continue  
+                    
+                sqN = sqrt(abs(N))  
+                
+                for a in divisors(N):  
+                    if a > sqN:
+                        break 
+                    
+                    b = N // a  
+                    
+                    if use_p3_optimization:
+                        if (a + b) % (2 * lambda2) == 0:  
+                            passed, delta = kuroda_test(m1, lambda2, a + b)  
+                            if passed:  
+                                ideals.setdefault(delta, []).append(m1)  
+                    else:
+                        if (2 * lambda2).divides(a + b):  
+                            y1 = (a + b) // (2 * lambda2)  
+                            passed, delta, ideal_coeffs = Solution_to_Ideals(p, y1, m1)  
+                            if passed:  
+                                ideals.setdefault(delta, []).append(ideal_coeffs)  
+                    
+                    if a != b:
+                        if use_p3_optimization:
+                            if (b - a) % (2 * lambda1) == 0:  
+                                passed, delta = kuroda_test(m2, lambda1, b - a)  
+                                if passed and m2 < sqrt(-delta / 4):  
+                                    ideals.setdefault(delta, []).append(m2)  
+                        else:
+                            if (2 * lambda1).divides(b - a):  
+                                y2 = (b - a) // (2 * lambda1)  
+                                passed, delta, ideal_coeffs = Solution_to_Ideals(p, y2, m2)  
+                                if passed:  
+                                    ideals.setdefault(delta, []).append(ideal_coeffs)
+    
+    show_progress("") 
+    
+    # ------------------ Ideal testing 
+    show_progress("📊 Step 2: Testing collected ideals...")
+    D = []  
+    
+    # Use a progress bar for the analysis step as well, as it can be slow   
+    if use_p3_optimization:
+        show_progress("Using p=3 optimization: Checking for multiple unique ideal generators...")
+        for delta in tqdm(
+                            ideals.keys(),
+                            desc="Discriminants",
+                            disable=not verbose,
+                            ascii=" █",
+                            bar_format="{desc}: |{bar}| {n}/{total} [{elapsed}s]"
+                        ):  
+            # Using set() is an efficient way to find unique values
+            if len(set(ideals[delta])) > 1:  
+                D.append(delta)  
+    else:
+        show_progress("Performing full independence testing with rankcheck...")
+        for delta in tqdm(
+                            ideals.keys(),
+                            desc="Discriminants",
+                            disable=not verbose,
+                            ascii=" █",
+                            bar_format="{desc}: |{bar}| {n}/{total} [{elapsed}s]"
+                        ) :  
+            if rankcheck(p, ideals[delta]):  
+                D.append(delta)  
+    
+    # ------------------ Final Results 
+    show_progress("\n✅ Analysis Complete!")
+    D = sorted(list(set(D)), reverse=True)  
+    show_progress(f"🎉 Found {len(D)} discriminants with {p}-rank > 1.\n")
+    
+    #  ----------------- Save
+    if output_file:
+        show_progress(f"💾 Saving {len(D)} discriminants to {output_file}...")
+        try:
+            with open(output_file, 'w') as f:
+                for discriminant in D:
+                    f.write(f"{discriminant}\n")
+            show_progress("💾 Save successful.")
+        except IOError as e:
+            show_progress(f"❌ Error saving file: {e}")
+
+    return D
