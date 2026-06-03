@@ -1,7 +1,7 @@
 
 # Methods for Finding Imaginary Quadratic Fields with High n-Rank
 
-This repository contains the main algorithm described in the paper titled "Improved Methods for Finding Imaginary Quadratic Fields with High n-Rank". This is an implementation oof the most successful method for finding discriminants of imaginary quadratic number fields whose class groups have a subgroup isomorphic to $(\mathbb{Z}/p\mathbb{Z})^2$ (for a given prime $p$). 
+This repository contains the main algorithm described in the paper titled "Improved Methods for Finding Imaginary Quadratic Fields with High n-Rank". This is an implementation of the most successful method for finding discriminants of imaginary quadratic number fields whose class groups have a subgroup isomorphic to $(\mathbb{Z}/p\mathbb{Z})^2$ (for a given prime $p$). 
 
 A PDF of the paper can be viewed in this directory. The main implementation contained here is Algorithm 3.2 from the paper. The best way to understand this algorithm is to read the paper.
 
@@ -58,36 +58,29 @@ The output of the function will be a list of discriminants, such that for each d
 
 ### Example
 We will run this with parameters `p=5`, `lambda_pairs=[(1,1), (1,2)]`, `lower_m1=3` and `upper_m1=1024`. We will save the output to a file `D.txt`. This is run via the command
-```python
-sage scripts.run.sage 5 '1,1;1,2' 3 1024 D.txt
+```bash
+sage scripts/run.sage 5 '1,1;1,2' 3 1024 D.txt
 ```
 While running, it outputs the following:
 ```
-🔄 Processing...
+Algorithm 3.2
+  prime p      = 5
+  lambda pairs = [(1, 1), (1, 2)]
+  m1 range     = [3, 1024]
 
-==============================================
-🚀 Starting Algorithm 3.2 🚀
-==============================================
-    Prime (p): 5
-    Lambda Pairs: [(1, 1), (1, 2)]
-    m1 Range: [3, 1024]
-----------------------------------------------
+Step 1: searching for solutions and generating ideals
+  lambda pair (1, 1)
+  m1: |███████████████████████████| 1022/1022 [02:40s]
+  lambda pair (1, 2)
+  m1: |███████████████████████████| 1022/1022 [01:35s]
 
-🔍 Step 1: Searching for solutions & generating ideals...
-Processing lambda pair: (1,1) m1: |███████████████████████████| 1022/1022 [02:40s]
-Processing lambda pair: (1,2) m1: |███████████████████████████| 1022/1022 [01:35s]
+Step 2: testing collected ideals
+  full independence testing via rankcheck
+  discriminants: |██████████████████████████████████████| 289909/289909 [02:38s]
 
-📊 Step 2: Testing collected ideals...
-Performing full independence testing with rankcheck...
-Discriminants: |██████████████████████████████████████| 289909/289909 [02:38s]
-
-✅ Analysis Complete!
-🎉 Found 131199 discriminants with 5-rank > 1.
-
-💾 Saving 131199 discriminants to /mnt/c/Users/ChristianBagshaw/quadratic-fields-high-n-rank/data/D.txt...
-💾 Save successful.
-🗑️  Cleaned up temporary files
-✨ Complete!
+Found 131199 discriminants with 5-rank > 1
+Saving 131199 discriminants to /mnt/c/Users/ChristianBagshaw/quadratic-fields-high-n-rank/data/D.txt
+Save complete
 ```
 This computation took approximately 5.5 minutes. `D.txt` now contains 131199 discriminants of 5-rank at least 2: 
 ```

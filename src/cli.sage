@@ -4,14 +4,14 @@ def get(i, name, cast=str, default=None):
     if i >= len(sys.argv):
         if default is not None:
             return default
-        print(f"❌ Missing required argument: {name}")
+        print(f"Missing required argument: {name}")
         print_usage()
         sys.exit()
-    
+
     try:
         return cast(sys.argv[i])
     except (ValueError, TypeError):
-        print(f"❌ Invalid {name}: '{sys.argv[i]}'")
+        print(f"Invalid {name}: '{sys.argv[i]}'")
         print_usage()
         sys.exit()
 
@@ -26,7 +26,7 @@ def parse_bool(s):
 def parse_txt(s):
     """Return the string if it ends with '.txt' (case-insensitive), else exit with error."""
     if not (isinstance(s, str) and s.strip().lower().endswith(".txt")):
-        print(f"❌ Expected a .txt filename, but got: '{s}'")
+        print(f"Expected a .txt filename, but got: '{s}'")
         print_usage()
         sys.exit(1)
     return s.strip()
@@ -38,7 +38,7 @@ def print_usage():
     print("To run it, use the following syntax:\n")
 
     print("Usage:")
-    print("  sage script.sage <p> <lambda_pairs> <lower_m1> <upper_m1> [output] [verbose] [explicit]\n")
+    print("  sage scripts/run.sage <p> <lambda_pairs> <lower_m1> <upper_m1> [output] [verbose] [explicit]\n")
 
     print("Arguments:")
     print("  p              Prime number (integer)")
@@ -50,8 +50,8 @@ def print_usage():
     print("  explicit       Optional: Perform explicit ideal testing for p=3 (true/false, default: false)\n")
 
     print("Examples:")
-    print("  sage script.sage 3 '1,1;2,3' 2 150")
-    print("  sage script.sage 5 '1,1' 10 100 testrun.txt true false\n")
+    print("  sage scripts/run.sage 3 '1,1;2,3' 2 150")
+    print("  sage scripts/run.sage 5 '1,1' 10 100 testrun.txt true false\n")
 
 
 def check_help():

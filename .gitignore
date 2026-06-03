@@ -1,0 +1,6 @@
+# SageMath preparses .sage files into .sage.py before running.
+*.sage.py
+
+# Python bytecode
+*.pyc
+__pycache__/

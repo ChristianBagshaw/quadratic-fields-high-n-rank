@@ -1,17 +1,16 @@
 import os
 import sys
 
-# --- Path Setup 
+# --- Path setup
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 src_path = os.path.join(project_root, 'src')
-print(src_path)
 if src_path not in sys.path:
     sys.path.insert(0, src_path)
 
 load(os.path.join(src_path, "algorithm.sage"))
-load(os.path.join(src_path, "utils.sage"))
+load(os.path.join(src_path, "cli.sage"))
 
-# --- Check for help
+# --- Help
 check_help()
 
 # --- Parameters
@@ -23,13 +22,12 @@ OUTPUT_FILE = get(5, "discriminant output file", parse_txt, "discriminants.txt")
 VERBOSE_OUTPUT = get(6, "verbose", parse_bool, True)
 EXPLICIT_TESTING = get(7, "explicit testing", parse_bool, False)
 
-# --- Output 
+# --- Output location
 output_dir = os.path.join(project_root, 'data')
 os.makedirs(output_dir, exist_ok=True)
 output_file_path = os.path.join(output_dir, OUTPUT_FILE)
 
-# --- Run Alg 3.2
-print("\n🔄 Processing...")
+# --- Run Algorithm 3.2
 p_rank_allsteps(
     p=P_VALUE,
     lambda_pairs=LAMBDA_PAIRS,
@@ -37,13 +35,5 @@ p_rank_allsteps(
     upper_m1=UPPER_M1,
     output_file=output_file_path,
     explicit_testing_3=EXPLICIT_TESTING,
-    verbose=VERBOSE_OUTPUT
+    verbose=VERBOSE_OUTPUT,
 )
-
-# --- Cleanup
-generated_py = __file__
-if os.path.isfile(generated_py):
-    os.remove(generated_py)
-    print("🗑️  Cleaned up temporary files")
-
-print("✨ Complete!")
